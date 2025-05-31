@@ -44,6 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
         showNotification('New email received!');
     });
 
+    // Handle new domain detection
+    socket.on('newDomain', (domain) => {
+        console.log('New domain detected:', domain);
+        addDomainToSelect(domain);
+        showNotification(`New domain detected: ${domain}`);
+    });
+
+    // Add domain to select dropdown
+    function addDomainToSelect(domain) {
+        const option = document.createElement('option');
+        option.value = domain;
+        option.textContent = `@${domain}`;
+        domainSelect.appendChild(option);
+    }
+
     // Modal handlers
     function openModal(modal) {
         modal.classList.remove('hidden');
