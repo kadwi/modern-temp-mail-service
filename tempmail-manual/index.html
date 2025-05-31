@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Temp Mail Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm fixed w-full top-0 z-50">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">TempMail</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="apiDocTrigger" class="text-gray-700 hover:text-gray-900 px-3 py-2">API Docs</button>
+                        <button id="domainModalTrigger" class="text-gray-700 hover:text-gray-900 px-3 py-2">Domain Setup</button>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section class="relative pt-16">
+            <div class="bg-black h-[400px] relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-black to-transparent opacity-75 z-10"></div>
+                <img src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg" 
+                     alt="Hero background" 
+                     class="w-full h-full object-cover opacity-50">
+                <div class="absolute inset-0 flex items-center z-20">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                        <div class="max-w-3xl">
+                            <h2 class="text-4xl font-bold text-white mb-4">Secure Temporary Email Service</h2>
+                            <p class="text-xl text-gray-300 mb-8">Create disposable email addresses instantly. Protect your privacy with our real-time email service.</p>
+                            <a href="#emailSection" class="bg-white text-black px-8 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                                Get Started
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8" id="emailSection">
+            <!-- Email Creation Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Create Your Temporary Email</h2>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="custom-email" class="block text-sm font-medium text-gray-700 mb-2">Custom Email</label>
+                                <div class="flex rounded-lg shadow-sm">
+                                    <input type="text" id="custom-email" 
+                                           class="flex-1 min-w-0 block w-full px-4 py-3 rounded-l-lg border border-gray-300 focus:ring-2 focus:ring-black focus:border-black sm:text-sm" 
+                                           placeholder="yourname">
+                                    <select id="domain-select" 
+                                            class="inline-flex items-center px-4 py-3 rounded-r-lg border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm focus:ring-2 focus:ring-black focus:border-black">
+                                        <option value="tempmail.com">@tempmail.com</option>
+                                        <option value="temp.mail">@temp.mail</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <button id="create-email" 
+                                        class="flex-1 inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-colors">
+                                    Create Email
+                                </button>
+                                <button id="random-email" 
+                                        class="flex-1 inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors">
+                                    Generate Random Email
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Email Display -->
+                <div id="current-email-section" class="hidden mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Your Temporary Email:</label>
+                            <span id="current-email" class="text-lg font-medium text-gray-900"></span>
+                        </div>
+                        <button id="copy-email" 
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-colors">
+                            Copy Email
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Email Inbox -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Inbox</h3>
+                    <div id="email-inbox" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">No messages yet</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- API Documentation Modal -->
+    <div id="apiDocModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-2xl mx-4 sm:mx-auto w-full">
+            <div class="flex justify-between items-start mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">API Documentation</h3>
+                <button id="closeApiDocModal" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="prose max-w-none">
+                <h4 class="text-lg font-semibold mb-4">Available Endpoints</h4>
+                <div class="space-y-6">
+                    <div>
+                        <h5 class="font-semibold text-gray-900">Create Email</h5>
+                        <pre class="bg-gray-50 rounded-lg p-4 mt-2">POST /api/create-email
+Content-Type: application/json
+
+{
+    "alias": "yourname",     // Optional
+    "domain": "tempmail.com" // Optional
+    "random": true          // Optional, generates random email if true
+}</pre>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-gray-900">Get Email Messages</h5>
+                        <pre class="bg-gray-50 rounded-lg p-4 mt-2">GET /api/get-email?email=yourname@tempmail.com</pre>
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-gray-900">List Available Domains</h5>
+                        <pre class="bg-gray-50 rounded-lg p-4 mt-2">GET /api/domains</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Domain Setup Modal -->
+    <div id="domainModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-2xl mx-4 sm:mx-auto w-full">
+            <div class="flex justify-between items-start mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Domain Setup Instructions</h3>
+                <button id="closeDomainModal" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="prose max-w-none">
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">DNS Records Configuration</h4>
+                        <div class="bg-gray-50 rounded-lg p-6 space-y-6">
+                            <div>
+                                <h5 class="font-semibold text-gray-900">1. MX Record</h5>
+                                <table class="min-w-full mt-2">
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Name/Host:</td>
+                                        <td class="text-sm">@ (or leave blank)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Type:</td>
+                                        <td class="text-sm">MX</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Priority:</td>
+                                        <td class="text-sm">1</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">TTL:</td>
+                                        <td class="text-sm">86400</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Value:</td>
+                                        <td class="text-sm">mail.yourdomain.com</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-900">2. A Record for Mail Server</h5>
+                                <table class="min-w-full mt-2">
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Name/Host:</td>
+                                        <td class="text-sm">mail</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Type:</td>
+                                        <td class="text-sm">A</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">TTL:</td>
+                                        <td class="text-sm">86400</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-sm text-gray-600">Value:</td>
+                                        <td class="text-sm">YOUR_SERVER_IP</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4">
+                        <div class="flex">
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    Replace YOUR_SERVER_IP with your actual server IP address. Allow 24-48 hours for DNS changes to propagate fully.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-4 right-4 hidden">
+        <div class="bg-black text-white px-6 py-3 rounded-lg shadow-lg">
+            <span id="notification-message"></span>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
