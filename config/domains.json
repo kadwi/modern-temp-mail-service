@@ -2,7 +2,8 @@
     "domains": [
         "tempmail.com",
         "temp.mail",
-        "disposable.mail"
+        "disposable.mail",
+        "wxmail.com"
     ],
     "instructions": {
         "addDomain": {
