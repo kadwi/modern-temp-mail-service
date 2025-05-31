@@ -1,0 +1,47 @@
+{
+    "domains": [
+        "tempmail.com",
+        "temp.mail",
+        "disposable.mail"
+    ],
+    "instructions": {
+        "addDomain": {
+            "steps": [
+                {
+                    "description": "Add MX Record",
+                    "settings": {
+                        "Name/Host": "@",
+                        "Type": "MX",
+                        "Priority": "1",
+                        "TTL": "86400",
+                        "Value/Target": "mail.yourdomain.com"
+                    }
+                },
+                {
+                    "description": "Add A Record for Mail Server",
+                    "settings": {
+                        "Name/Host": "mail",
+                        "Type": "A",
+                        "TTL": "86400",
+                        "Value": "YOUR_SERVER_IP"
+                    }
+                },
+                {
+                    "description": "Add SPF Record (Recommended)",
+                    "settings": {
+                        "Name/Host": "@",
+                        "Type": "TXT",
+                        "TTL": "86400",
+                        "Value": "v=spf1 ip4:YOUR_SERVER_IP -all"
+                    }
+                }
+            ],
+            "notes": [
+                "Replace YOUR_SERVER_IP with your actual server IP address",
+                "Allow up to 24-48 hours for DNS changes to propagate",
+                "Ensure your server firewall allows incoming traffic on port 25 (SMTP)",
+                "Test email delivery after DNS propagation is complete"
+            ]
+        }
+    }
+}
