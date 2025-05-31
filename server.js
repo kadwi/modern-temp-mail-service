@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs').promises;
+const dns = require('dns').promises;
 
 const app = express();
 const server = http.createServer(app);
@@ -18,22 +19,74 @@ const io = socketIo(server, {
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// In-memory storage for emails and their messages
+// In-memory storage
 const emailBoxes = new Map();
+let availableDomains = new Set();
 
-// Load available domains
-let availableDomains = [];
-async function loadDomains() {
+// Function to verify MX and A records for a domain
+async function verifyDomainRecords(domain) {
     try {
-        const domainsFile = await fs.readFile(path.join(__dirname, 'config', 'domains.json'), 'utf8');
-        const domainsConfig = JSON.parse(domainsFile);
-        availableDomains = domainsConfig.domains;
-        return domainsConfig;
-    } catch (error) {
-        console.error('Error loading domains:', error);
-        availableDomains = ['tempmail.com', 'temp.mail']; // Fallback domains
-        return { domains: availableDomains };
+        // Check MX records
+        const mxRecords = await dns.resolveMx(domain);
+        const hasMxRecord = mxRecords.some(record => 
+            record.exchange.includes('mail.' + domain) && record.priority === 1
+        );
+
+        if (!hasMxRecord) {
+            console.log(`Domain ${domain} - MX record not properly configured`);
+            return false;
+        }
+
+        // Check A record for mail subdomain
+        const mailServer = 'mail.' + domain;
+        try {
+            await dns.resolve4(mailServer);
+            console.log(`Domain ${domain} - Valid configuration detected`);
+            return true;
+        } catch (err) {
+            console.log(`Domain ${domain} - A record for ${mailServer} not found`);
+            return false;
+        }
+    } catch (err) {
+        console.log(`Domain ${domain} - DNS verification failed:`, err.code);
+        return false;
     }
+}
+
+// Function to discover and verify new domains
+async function discoverDomains() {
+    try {
+        // Load domains from config file
+        const domainsFile = await fs.readFile(path.join(__dirname, 'config', 'domains.json'), 'utf8');
+        const configuredDomains = JSON.parse(domainsFile).domains;
+        
+        for (const domain of configuredDomains) {
+            if (!availableDomains.has(domain)) {
+                const isValid = await verifyDomainRecords(domain);
+                if (isValid) {
+                    availableDomains.add(domain);
+                    console.log(`Added configured domain: ${domain}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading configured domains:', error);
+    }
+}
+
+// Function to check new domain
+async function checkNewDomain(domain) {
+    if (!availableDomains.has(domain)) {
+        const isValid = await verifyDomainRecords(domain);
+        if (isValid) {
+            availableDomains.add(domain);
+            console.log(`Auto-detected new domain: ${domain}`);
+            // Notify connected clients about new domain
+            io.emit('newDomain', domain);
+            return true;
+        }
+    }
+    return false;
 }
 
 // Generate random string for email aliases
@@ -44,11 +97,16 @@ function generateRandomAlias(length = 10) {
 // API Endpoints
 app.get('/api/domains', async (req, res) => {
     try {
-        const domainsConfig = await loadDomains();
+        // Auto-discover domains
+        await discoverDomains();
+        
+        const domainsConfig = await fs.readFile(path.join(__dirname, 'config', 'domains.json'), 'utf8');
+        const config = JSON.parse(domainsConfig);
+        
         res.json({ 
             success: true, 
-            domains: domainsConfig.domains,
-            instructions: domainsConfig.instructions 
+            domains: Array.from(availableDomains),
+            instructions: config.instructions 
         });
     } catch (error) {
         console.error('Error fetching domains:', error);
@@ -59,27 +117,31 @@ app.get('/api/domains', async (req, res) => {
     }
 });
 
-app.post('/api/create-email', (req, res) => {
+app.post('/api/create-email', async (req, res) => {
     try {
         let { alias, domain } = req.body;
         
         if (req.body.random) {
             alias = generateRandomAlias();
-            domain = availableDomains[Math.floor(Math.random() * availableDomains.length)];
+            domain = Array.from(availableDomains)[Math.floor(Math.random() * availableDomains.size)];
         }
 
-        if (!alias || !domain) {
+        if (!alias) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Invalid email parameters' 
             });
         }
 
-        if (!availableDomains.includes(domain)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid domain' 
-            });
+        // Check if domain is new and valid
+        if (!availableDomains.has(domain)) {
+            const isValid = await checkNewDomain(domain);
+            if (!isValid) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Invalid or improperly configured domain' 
+                });
+            }
         }
 
         const email = `${alias}@${domain}`.toLowerCase();
@@ -133,12 +195,9 @@ io.on('connection', (socket) => {
 
     socket.on('subscribe', ({ email }) => {
         if (email && emailBoxes.has(email)) {
-            // Leave previous room if any
             if (currentRoom) {
                 socket.leave(currentRoom);
             }
-            
-            // Join new room
             currentRoom = email.toLowerCase();
             socket.join(currentRoom);
             console.log(`Client subscribed to ${currentRoom}`);
@@ -154,17 +213,25 @@ io.on('connection', (socket) => {
     });
 });
 
-// Initialize domains before starting server
-loadDomains().then(() => {
-    const HTTP_PORT = process.env.PORT || 8000;
+// Initialize domains and start server
+async function initializeServer() {
+    try {
+        // Initial domain discovery
+        await discoverDomains();
+        
+        // Start periodic domain discovery (every 5 minutes)
+        setInterval(discoverDomains, 5 * 60 * 1000);
 
-    server.listen(HTTP_PORT, () => {
-        console.log(`Server running on port ${HTTP_PORT}`);
-    });
-}).catch(error => {
-    console.error('Failed to initialize server:', error);
-    process.exit(1);
-});
+        const HTTP_PORT = process.env.PORT || 8000;
+        server.listen(HTTP_PORT, () => {
+            console.log(`Server running on port ${HTTP_PORT}`);
+            console.log('Available domains:', Array.from(availableDomains));
+        });
+    } catch (error) {
+        console.error('Failed to initialize server:', error);
+        process.exit(1);
+    }
+}
 
 // Error handling
 process.on('uncaughtException', (err) => {
@@ -174,3 +241,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
+
+// Start the server
+initializeServer();
