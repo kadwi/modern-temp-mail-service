@@ -1,0 +1,65 @@
+Instructions to Add wxmail.com to Temp Mail Service
+================================================
+
+Follow these steps to configure your domain wxmail.com for use with the temp mail service:
+
+1. Add MX Record
+---------------
+- Name/Host: @ (or leave blank)
+- Record Type: MX
+- Priority: 1
+- TTL: 86400 (24 hours)
+- Value/Target: mail.wxmail.com
+
+2. Add A Record for Mail Server
+------------------------------
+- Name/Host: mail
+- Record Type: A
+- TTL: 86400 (24 hours)
+- Value: YOUR_SERVER_IP (Replace with your actual server IP)
+
+3. Add SPF Record (Recommended for Email Authentication)
+-----------------------------------------------------
+- Name/Host: @ (or leave blank)
+- Record Type: TXT
+- TTL: 86400 (24 hours)
+- Value: v=spf1 ip4:YOUR_SERVER_IP -all
+
+Important Notes:
+---------------
+1. Replace YOUR_SERVER_IP with your actual server's IP address in both the A record and SPF record
+2. Allow 24-48 hours for DNS changes to fully propagate across the internet
+3. Ensure your server's firewall allows incoming traffic on port 25 (SMTP)
+4. After DNS propagation, test email delivery by:
+   - Creating a temporary email with @wxmail.com domain
+   - Sending a test email to that address
+   - Verifying receipt in the temp mail interface
+
+Example Configuration:
+--------------------
+If your server IP is 203.0.113.1, your records would look like:
+
+MX Record:
+- @ IN MX 1 mail.wxmail.com
+
+A Record:
+- mail IN A 203.0.113.1
+
+TXT Record (SPF):
+- @ IN TXT "v=spf1 ip4:203.0.113.1 -all"
+
+After DNS Setup:
+--------------
+1. Add "wxmail.com" to the domains list in config/domains.json
+2. Restart the temp mail server to load the new domain
+3. Users can now create temporary emails with @wxmail.com
+
+Testing:
+-------
+1. Use dig or nslookup to verify your DNS records:
+   dig MX wxmail.com
+   dig A mail.wxmail.com
+   dig TXT wxmail.com
+
+2. Send a test email to test@wxmail.com
+3. Check the temp mail interface for the test email
